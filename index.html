@@ -1896,7 +1896,7 @@
       }
 
       try {
-        const response = await fetch(`${PROXY_URL}/api/sk/status`, {
+        const response = await fetch(`${PROXY_URL}api/sk/status`, {
           headers: { 'x-sk': sk }
         });
         const data = await response.json();
@@ -2090,7 +2090,7 @@
         return;
       }
       try {
-        const response = await fetch(`${PROXY_URL}/?check=1`, {
+        const response = await fetch(`${PROXY_URL}?check=1`, {
           method: 'HEAD',
           headers: sk ? { 'x-sk': sk } : {}
         });

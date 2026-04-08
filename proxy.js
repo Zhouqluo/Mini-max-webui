@@ -51,7 +51,7 @@ const server = http.createServer((req, res) => {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-target-url, x-api-key, x-sk, Accept');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-target-url, x-sk, Accept');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
