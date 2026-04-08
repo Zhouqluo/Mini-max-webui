@@ -1,0 +1,2907 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minimax AI Studio</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #111111;
+      --bg-tertiary: #1a1a1a;
+      --bg-card: #141414;
+      --border: #2a2a2a;
+      --border-bright: #3a3a3a;
+      --text-primary: #e8e8e8;
+      --text-secondary: #888;
+      --text-muted: #555;
+      --accent: #3ba475;
+      --accent-dim: #3ba47520;
+      --accent-hover: #4fc68a;
+      --success: #4ade80;
+      --error: #f87171;
+      --warning: #fbbf24;
+      --tab-active: #3ba475;
+      --shadow: 0 4px 20px rgba(0,0,0,0.4);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    [data-theme="light"] {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f5f5f7;
+      --bg-tertiary: #eaeaea;
+      --bg-card: #ffffff;
+      --border: #d1d1d6;
+      --border-bright: #a1a1a6;
+      --text-primary: #1d1d1f;
+      --text-secondary: #6e6e73;
+      --text-muted: #aeaeb2;
+      --accent: #2d8a5e;
+      --accent-dim: #2d8a5e18;
+      --accent-hover: #248a51;
+      --shadow: 0 4px 20px rgba(0,0,0,0.1);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.6;
+      overflow: hidden;
+    }
+
+    ::selection {
+      background: var(--accent);
+      color: var(--bg-primary);
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-bright);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 12px 16px;
+      gap: 12px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      gap: 16px;
+      position: relative;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--bg-primary);
+    }
+
+    .logo-text {
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .logo-text span {
+      color: var(--accent);
+    }
+
+    /* Auth Section */
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+    }
+
+    .header-auth {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .auth-input-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 200px;
+      max-width: 260px;
+    }
+
+    .apikey-input {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 100px 12px 16px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      transition: all 0.25s ease;
+    }
+
+    .apikey-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim), var(--shadow);
+    }
+
+    .apikey-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .btn-auth {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--accent);
+      color: var(--bg-primary);
+      border: none;
+      border-radius: 7px;
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-auth:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-auth:active {
+      transform: translateY(-50%) scale(0.97);
+    }
+
+    .btn-auth:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      padding: 8px 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      min-width: 180px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+
+    .status-dot.connected {
+      background: var(--success);
+      box-shadow: 0 0 10px var(--success);
+    }
+
+    .status-dot.error {
+      background: var(--error);
+      box-shadow: 0 0 10px var(--error);
+    }
+
+    .sk-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: auto;
+      font-weight: 500;
+    }
+
+    .sk-status.valid {
+      color: var(--success);
+      background: rgba(74, 222, 128, 0.12);
+    }
+
+    .sk-status.invalid {
+      color: var(--error);
+      background: rgba(248, 113, 113, 0.12);
+    }
+
+    .sk-status.warning {
+      color: var(--warning);
+      background: rgba(251, 191, 36, 0.12);
+    }
+
+    .sk-status.expired {
+      color: var(--error);
+      background: rgba(248, 113, 113, 0.15);
+    }
+
+    /* Theme Toggle */
+    .theme-toggle {
+      position: relative;
+    }
+
+    .theme-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .theme-btn:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border-color: var(--border-bright);
+    }
+
+    .theme-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 6px;
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      box-shadow: var(--shadow);
+      z-index: 100;
+      min-width: 120px;
+    }
+
+    .theme-dropdown.show {
+      display: flex;
+    }
+
+    .theme-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+
+    .theme-option:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .theme-option.active {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .btn {
+      background: var(--accent);
+      color: var(--bg-primary);
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+      border-color: var(--border-bright);
+    }
+
+    .btn-icon {
+      width: 40px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-secondary);
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .tab:hover {
+      color: var(--text-primary);
+      background: var(--bg-tertiary);
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: var(--bg-primary);
+    }
+
+    .tab-icon {
+      font-size: 16px;
+    }
+
+    /* Main Content */
+    .main {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel {
+      display: none;
+      flex: 1;
+      overflow: hidden;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .panel.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Chat Panel */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      gap: 12px;
+    }
+
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 4px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .btn-clear-chat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-clear-chat:hover {
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .message {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      line-height: 1.5;
+      animation: messageIn 0.3s ease;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    @keyframes messageIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: var(--accent);
+      color: var(--bg-primary);
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.assistant {
+      align-self: flex-start;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+
+    .message.error {
+      background: var(--error);
+      color: var(--bg-primary);
+      font-size: 13px;
+    }
+
+    /* Markdown rendering in messages */
+    .message.assistant p {
+      margin: 0 0 8px 0;
+    }
+    .message.assistant p:last-child {
+      margin-bottom: 0;
+    }
+    .message.assistant code {
+      background: var(--bg-primary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .message.assistant pre {
+      background: var(--bg-primary);
+      padding: 12px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+    .message.assistant pre code {
+      background: none;
+      padding: 0;
+    }
+    .message.assistant ul, .message.assistant ol {
+      margin: 8px 0;
+      padding-left: 20px;
+    }
+    .message.assistant blockquote {
+      border-left: 3px solid var(--accent);
+      margin: 8px 0;
+      padding-left: 12px;
+      color: var(--text-secondary);
+    }
+
+    .message.typing::after {
+      content: '...';
+      animation: typingDots 1s infinite;
+    }
+
+    @keyframes typingDots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
+
+    .message-placeholder {
+      color: var(--text-muted);
+      text-align: center;
+      padding: 40px;
+      font-size: 13px;
+    }
+
+    .chat-input-area {
+      flex-shrink: 0;
+    }
+
+    .chat-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .chat-input {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 12px 50px 12px 18px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      resize: none;
+      max-height: 120px;
+      overflow-y: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .chat-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .chat-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .chat-send-btn {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .chat-send-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .chat-send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .chat-send-btn svg {
+      stroke: var(--bg-primary);
+    }
+
+    /* TTS Panel */
+    .tts-container {
+      display: flex;
+      gap: 12px;
+      height: 100%;
+    }
+
+    .tts-left {
+      flex: 0 0 280px;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .tts-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .tts-text-area {
+      flex: 1;
+      min-height: 100px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.6;
+      outline: none;
+      resize: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .tts-text-area:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .tts-text-area::placeholder {
+      color: var(--text-muted);
+    }
+
+    .tts-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .control-group {
+      flex: 1;
+    }
+
+    .control-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .control-select {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-size: 12px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .control-select:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-refresh {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .btn-refresh:hover {
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .voice-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .voice-selector-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .voice-list {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      max-height: 120px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .voice-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 2px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .voice-card:hover {
+      border-color: var(--border-bright);
+      background: var(--bg-tertiary);
+    }
+
+    .voice-card.selected {
+      border-color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .voice-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .voice-name {
+      font-size: 10px;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+      text-align: center;
+    }
+
+    .voice-loading {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 20px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .voice-group-label {
+      grid-column: 1 / -1;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 8px 0 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 4px;
+    }
+
+    .tts-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .tts-settings {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .tts-output-section {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .tts-output-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .audio-progress-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tts-audio-player {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .audio-progress-bar {
+      width: 100%;
+      height: 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .audio-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .audio-time-info {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .tts-audio-controls {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .tts-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 40px;
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    /* Image Panel */
+    .image-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      height: 100%;
+    }
+
+    .image-input-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .image-prompt-area {
+      flex: 1;
+      min-height: 80px;
+      max-height: 120px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.6;
+      outline: none;
+      resize: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .image-prompt-area:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .image-prompt-area::placeholder {
+      color: var(--text-muted);
+    }
+
+    .image-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .image-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .image-extra-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .image-toggles {
+      display: flex;
+      gap: 16px;
+    }
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .toggle-label input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+    }
+
+    .control-input {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .control-input:focus {
+      border-color: var(--accent);
+    }
+
+    .control-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .image-output-section {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .image-output-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .image-preview {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow: auto;
+    }
+
+    .image-preview img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .image-preview img.visible {
+      display: block;
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      width: 100%;
+    }
+
+    .image-grid img {
+      display: block;
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .image-grid img:hover {
+      transform: scale(1.02);
+    }
+
+    .image-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .image-actions-bottom {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Loading State */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 10, 10, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .loading-overlay.visible {
+      display: flex;
+    }
+
+    .loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 1001;
+    }
+
+    .toast {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      animation: toastIn 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toast.error {
+      border-color: var(--error);
+      color: var(--error);
+    }
+
+    .toast.success {
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    /* Responsive - Tablet */
+    @media (max-width: 900px) {
+      .app {
+        max-width: 100%;
+      }
+
+      .image-container {
+        grid-template-columns: 1fr;
+      }
+
+      .image-output-section {
+        min-height: 250px;
+      }
+
+      .tabs {
+        flex-wrap: wrap;
+      }
+
+      .tab {
+        flex: 1 1 calc(33% - 4px);
+        min-width: 100px;
+      }
+
+      /* TTS tablet layout */
+      .tts-container {
+        gap: 12px;
+      }
+
+      .tts-left {
+        flex: 0 0 200px;
+      }
+
+      .voice-list {
+        grid-template-columns: repeat(3, 1fr);
+        max-height: 110px;
+      }
+
+      .voice-card {
+        padding: 6px 2px;
+      }
+
+      /* Image options tablet */
+      .image-options {
+        gap: 10px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .app {
+        padding: 10px;
+        gap: 10px;
+      }
+
+      .header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+        position: relative;
+        padding-top: 8px;
+      }
+
+      .logo-text {
+        font-size: 16px;
+      }
+
+      .logo-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
+      }
+
+      .header-right {
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+      }
+
+      .header-auth {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+      }
+
+      .auth-input-wrapper {
+        width: 100%;
+        max-width: none;
+      }
+
+      .connection-status {
+        width: 100%;
+        font-size: 11px;
+        padding: 6px 10px;
+      }
+
+      .theme-toggle {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+      }
+
+      .theme-btn {
+        width: 32px;
+        height: 32px;
+      }
+
+      /* Tabs */
+      .tabs {
+        gap: 2px;
+        padding: 3px;
+      }
+
+      .tab {
+        padding: 8px 10px;
+        font-size: 12px;
+        gap: 4px;
+      }
+
+      .tab-icon {
+        font-size: 14px;
+      }
+
+      /* Chat Panel */
+      .chat-container {
+        gap: 8px;
+      }
+
+      .chat-input-wrapper {
+        width: 100%;
+      }
+
+      .chat-input {
+        font-size: 14px;
+        padding: 10px 45px 10px 14px;
+      }
+
+      .chat-send-btn {
+        width: 32px;
+        height: 32px;
+        right: 5px;
+      }
+
+      .chat-send-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      /* TTS Panel */
+      .tts-container {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .tts-left {
+        flex: none;
+        width: 100%;
+      }
+
+      .voice-list {
+        grid-template-columns: repeat(3, 1fr);
+        max-height: 100px;
+      }
+
+      .tts-text-area {
+        min-height: 80px;
+        font-size: 13px;
+      }
+
+      /* Image Panel */
+      .image-options {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .image-actions {
+        flex-direction: column;
+      }
+
+      .image-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .image-prompt-area textarea {
+        font-size: 13px;
+      }
+
+      .image-toggles {
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .toggle-label {
+        font-size: 12px;
+      }
+
+      .image-output-section {
+        min-height: 200px;
+      }
+
+      /* Messages */
+      .message {
+        max-width: 92%;
+        font-size: 13px;
+        padding: 8px 12px;
+      }
+
+      .message-placeholder {
+        font-size: 12px;
+      }
+
+      /* Voice card text */
+      .voice-name {
+        font-size: 10px;
+      }
+
+      /* Control inputs */
+      .control-input {
+        font-size: 12px;
+        padding: 7px 9px;
+      }
+
+      .control-label {
+        font-size: 9px;
+      }
+
+      .control-select {
+        font-size: 12px;
+        padding: 6px 8px;
+      }
+
+      /* Audio player */
+      .audio-info {
+        font-size: 11px;
+      }
+
+      .audio-time {
+        font-size: 11px;
+      }
+
+      /* Enable scrolling for panels on mobile */
+      .panel {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .main {
+        overflow: hidden;
+      }
+
+      .chat-messages {
+        overflow-y: auto;
+        flex: 1;
+      }
+
+      .tts-right {
+        overflow-y: auto;
+      }
+
+      .image-output-section {
+        overflow-y: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon">M</div>
+        <div class="logo-text">Minimax <span>Studio</span></div>
+      </div>
+      <div class="header-right">
+        <div class="header-auth">
+          <div class="auth-input-wrapper">
+            <input type="password" class="apikey-input" id="skInput" placeholder="输入你的 SK..." autocomplete="off">
+            <button class="btn-auth" id="saveApiKeyBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              认证
+            </button>
+          </div>
+          <div class="connection-status" id="connectionStatus">
+            <span class="status-dot" id="statusDot"></span>
+            <span class="status-text" id="statusText">未连接到代理服务器</span>
+            <span class="sk-status" id="skStatus"></span>
+          </div>
+        </div>
+        <div class="theme-toggle">
+          <button class="theme-btn" id="themeBtn" title="切换主题">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon-light">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon-dark" style="display:none">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+          <div class="theme-dropdown" id="themeDropdown">
+            <button class="theme-option" data-theme="light">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+              亮色
+            </button>
+            <button class="theme-option" data-theme="dark">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+              暗色
+            </button>
+            <button class="theme-option" data-theme="system">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+              系统
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="chat">
+        <span class="tab-icon">💬</span>
+        <span>对话</span>
+      </button>
+      <button class="tab" data-tab="tts">
+        <span class="tab-icon">🎙️</span>
+        <span>语音合成</span>
+      </button>
+      <button class="tab" data-tab="image">
+        <span class="tab-icon">🖼️</span>
+        <span>图片生成</span>
+      </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Chat Panel -->
+      <section class="panel active" id="chatPanel">
+        <div class="chat-container">
+          <div class="chat-header">
+            <span>对话</span>
+            <button class="btn-clear-chat" id="clearChatBtn" title="清空对话">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              清空
+            </button>
+          </div>
+          <div class="chat-messages" id="chatMessages">
+            <div class="message-placeholder">
+              输入消息开始对话，AI 将在这里回复
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+              <textarea class="chat-input" id="chatInput" placeholder="输入你的问题..." rows="1"></textarea>
+              <button class="chat-send-btn" id="chatSendBtn" title="发送">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TTS Panel -->
+      <section class="panel" id="ttsPanel">
+        <div class="tts-container">
+          <div class="tts-left">
+            <textarea class="tts-text-area" id="ttsText" placeholder="输入要转换为语音的文本..."></textarea>
+          </div>
+          <div class="tts-right">
+            <div class="voice-selector">
+              <div class="voice-selector-header">
+                <label class="control-label">声音选择</label>
+                <button class="btn-refresh" id="refreshVoicesBtn" title="刷新音色">↻</button>
+              </div>
+              <div class="voice-list" id="voiceList">
+                <div class="voice-loading">加载中...</div>
+              </div>
+              <select class="control-select" id="ttsVoice" style="display:none;">
+                <option>加载中...</option>
+              </select>
+            </div>
+            <div class="tts-settings">
+              <div class="control-row">
+                <div class="control-group">
+                  <label class="control-label">模型</label>
+                  <select class="control-select" id="ttsModel">
+                    <option value="speech-2.8-hd">speech-2.8-hd</option>
+                    <option value="speech-2.8-turbo">speech-2.8-turbo</option>
+                    <option value="speech-2.6-hd">speech-2.6-hd</option>
+                    <option value="speech-2.6-turbo">speech-2.6-turbo</option>
+                    <option value="speech-02-hd">speech-02-hd</option>
+                    <option value="speech-02-turbo">speech-02-turbo</option>
+                    <option value="speech-01-hd">speech-01-hd</option>
+                    <option value="speech-01-turbo">speech-01-turbo</option>
+                  </select>
+                </div>
+                <div class="control-group">
+                  <label class="control-label">语速</label>
+                  <select class="control-select" id="ttsSpeed">
+                    <option value="0.5">0.5x</option>
+                    <option value="0.6">0.6x</option>
+                    <option value="0.8">0.8x</option>
+                    <option value="1.0" selected>1.0x</option>
+                    <option value="1.2">1.2x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2.0">2.0x</option>
+                  </select>
+                </div>
+              </div>
+              <div class="control-row">
+                <div class="control-group">
+                  <label class="control-label">情绪</label>
+                  <select class="control-select" id="ttsEmotion">
+                    <option value="">自动</option>
+                    <option value="happy">开心</option>
+                    <option value="sad">悲伤</option>
+                    <option value="angry">愤怒</option>
+                    <option value="fearful">害怕</option>
+                    <option value="disgusted">厌恶</option>
+                    <option value="surprised">惊讶</option>
+                    <option value="calm">平静</option>
+                    <option value="fluent">生动</option>
+                    <option value="whisper">低语</option>
+                  </select>
+                </div>
+                <div class="control-group">
+                  <label class="control-label">音量</label>
+                  <select class="control-select" id="ttsVol">
+                    <option value="0.5">0.5</option>
+                    <option value="1" selected>1.0</option>
+                    <option value="2">2.0</option>
+                    <option value="5">5.0</option>
+                    <option value="10">10.0</option>
+                  </select>
+                </div>
+              </div>
+              <div class="control-row">
+                <div class="control-group">
+                  <label class="control-label">语调</label>
+                  <select class="control-select" id="ttsPitch">
+                    <option value="-12">-12</option>
+                    <option value="-6">-6</option>
+                    <option value="0" selected>0</option>
+                    <option value="6">+6</option>
+                    <option value="12">+12</option>
+                  </select>
+                </div>
+                <div class="control-group">
+                  <label class="control-label">格式</label>
+                  <select class="control-select" id="ttsFormat">
+                    <option value="mp3" selected>mp3</option>
+                    <option value="pcm">pcm</option>
+                    <option value="flac">flac</option>
+                    <option value="wav">wav</option>
+                  </select>
+                </div>
+              </div>
+              <div class="control-row">
+                <div class="control-group">
+                  <label class="control-label">采样率</label>
+                  <select class="control-select" id="ttsSampleRate">
+                    <option value="8000">8000</option>
+                    <option value="16000">16000</option>
+                    <option value="22050">22050</option>
+                    <option value="24000">24000</option>
+                    <option value="32000" selected>32000</option>
+                    <option value="44100">44100</option>
+                  </select>
+                </div>
+                <div class="control-group">
+                  <label class="control-label">比特率</label>
+                  <select class="control-select" id="ttsBitrate">
+                    <option value="32000">32k</option>
+                    <option value="64000">64k</option>
+                    <option value="128000" selected>128k</option>
+                    <option value="256000">256k</option>
+                  </select>
+                </div>
+              </div>
+              <div class="control-row">
+                <div class="control-group">
+                  <label class="control-label">声道</label>
+                  <select class="control-select" id="ttsChannel">
+                    <option value="1" selected>单声道</option>
+                    <option value="2">双声道</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="tts-actions">
+              <button class="btn" id="ttsGenerateBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                开始合成
+              </button>
+            </div>
+            <div class="tts-audio-player" id="ttsAudioPlayer" style="display: none;">
+              <div class="audio-progress-container" id="audioProgressContainer">
+                <div class="audio-progress-bar" id="audioProgressBar">
+                  <div class="audio-progress-fill" id="audioProgressFill"></div>
+                </div>
+                <div class="audio-time-info">
+                  <span id="audioCurrentTime">0:00</span>
+                  <span id="audioDuration">0:00</span>
+                </div>
+              </div>
+              <div class="tts-audio-controls">
+                <button class="btn btn-secondary btn-icon" id="audioPlayBtn" title="播放/暂停">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" id="playIcon">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" id="pauseIcon" style="display: none;">
+                    <rect x="6" y="4" width="4" height="16"></rect>
+                    <rect x="14" y="4" width="4" height="16"></rect>
+                  </svg>
+                </button>
+                <button class="btn btn-secondary" id="ttsDownloadBtn">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  下载
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Image Panel -->
+      <section class="panel" id="imagePanel">
+        <div class="image-container">
+          <div class="image-input-section">
+            <textarea class="image-prompt-area" id="imagePrompt" placeholder="描述你想要生成的图片..."></textarea>
+            <div class="image-options">
+              <div class="control-group">
+                <label class="control-label">输出格式</label>
+                <select class="control-select" id="imageResponseFormat">
+                  <option value="url">URL</option>
+                  <option value="base64" selected>Base64</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label class="control-label">图片尺寸</label>
+                <select class="control-select" id="imageSize">
+                  <option value="1:1">1:1 (1024x1024)</option>
+                  <option value="16:9">16:9 (1280x720)</option>
+                  <option value="4:3">4:3 (1152x864)</option>
+                  <option value="3:2">3:2 (1248x832)</option>
+                  <option value="2:3">2:3 (832x1248)</option>
+                  <option value="3:4">3:4 (864x1152)</option>
+                  <option value="9:16">9:16 (720x1280)</option>
+                  <option value="21:9">21:9 (1344x576)</option>
+                </select>
+              </div>
+              <div class="control-group">
+                <label class="control-label">图片数量</label>
+                <select class="control-select" id="imageCount">
+                  <option value="1" selected>1 张</option>
+                  <option value="2">2 张</option>
+                  <option value="3">3 张</option>
+                  <option value="4">4 张</option>
+                  <option value="5">5 张</option>
+                  <option value="6">6 张</option>
+                  <option value="7">7 张</option>
+                  <option value="8">8 张</option>
+                  <option value="9">9 张</option>
+                </select>
+              </div>
+            </div>
+            <div class="image-extra-options">
+              <div class="control-row">
+                <div class="control-group">
+                  <label class="control-label">随机种子</label>
+                  <input type="number" class="control-input" id="imageSeed" placeholder="留空随机">
+                </div>
+              </div>
+              <div class="image-toggles">
+                <label class="toggle-label">
+                  <input type="checkbox" id="imagePromptOptimizer">
+                  <span class="toggle-text">Prompt优化</span>
+                </label>
+                <label class="toggle-label">
+                  <input type="checkbox" id="imageWatermark">
+                  <span class="toggle-text">添加水印</span>
+                </label>
+              </div>
+            </div>
+            <div class="image-actions">
+              <button class="btn" id="imageGenerateBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                生成图片
+              </button>
+            </div>
+          </div>
+          <div class="image-output-section">
+            <div class="image-output-header">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+              生成的图片
+            </div>
+            <div class="image-preview" id="imagePreview">
+              <div class="image-placeholder" id="imagePlaceholder">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="0.3">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>生成的图片将显示在这里</span>
+              </div>
+              <img id="generatedImage" alt="生成的图片">
+            </div>
+            <div class="image-actions-bottom" id="imageActionsBottom" style="display: none;">
+              <button class="btn btn-secondary" id="imageDownloadBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                下载
+              </button>
+              <button class="btn btn-secondary" id="imageNewBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                重新生成
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span>@Copyright By 王子周棋洛 2026</span>
+    </footer>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // State
+    let sk = localStorage.getItem('minimax_sk') || '';
+    let useProxy = true;
+    let currentAudio = null;
+    let isPlaying = false;
+    let currentAudioUrl = null;
+    let chatHistory = JSON.parse(localStorage.getItem('minimax_chat_history') || '[]');
+
+    // Save chat history to localStorage
+    function saveChatHistory() {
+      localStorage.setItem('minimax_chat_history', JSON.stringify(chatHistory));
+    }
+
+    // Check SK status
+    async function checkSKStatus() {
+      const skStatusEl = document.getElementById('skStatus');
+      if (!sk) {
+        skStatusEl.textContent = '';
+        skStatusEl.className = 'sk-status';
+        return { valid: false, error: '未配置SK' };
+      }
+
+      try {
+        const response = await fetch(`${PROXY_URL}/api/sk/status`, {
+          headers: { 'x-sk': sk }
+        });
+        const data = await response.json();
+
+        if (data.valid) {
+          const msLeft = data.expiresAt - Date.now();
+          const hoursLeft = Math.ceil(msLeft / (60 * 60 * 1000));
+          const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+          let timeText;
+          if (hoursLeft < 24) {
+            timeText = `${hoursLeft}小时`;
+          } else {
+            timeText = `${daysLeft}天`;
+          }
+          skStatusEl.textContent = `有效 (剩余${timeText})`;
+          skStatusEl.className = 'sk-status valid';
+        } else if (data.expired) {
+          skStatusEl.textContent = '已过期';
+          skStatusEl.className = 'sk-status expired';
+          showToast('SK已过期，请联系管理员续期', 'error');
+        } else {
+          skStatusEl.textContent = '无效';
+          skStatusEl.className = 'sk-status invalid';
+          showToast('SK无效', 'error');
+        }
+
+        return data;
+      } catch (e) {
+        skStatusEl.textContent = '检测失败';
+        skStatusEl.className = 'sk-status warning';
+        return { valid: false, error: e.message };
+      }
+    }
+
+    // API Endpoints
+    const API_BASE_URL = 'https://api.minimaxi.com';
+    const PROXY_URL = 'https://zhouql.vip/minimax/backend/';
+
+    // DOM Elements
+    const skInput = document.getElementById('skInput');
+    const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.panel');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const chatSendBtn = document.getElementById('chatSendBtn');
+    const ttsText = document.getElementById('ttsText');
+    const ttsVoice = document.getElementById('ttsVoice');
+    const ttsSpeed = document.getElementById('ttsSpeed');
+    const ttsModel = document.getElementById('ttsModel');
+    const ttsEmotion = document.getElementById('ttsEmotion');
+    const ttsVol = document.getElementById('ttsVol');
+    const ttsPitch = document.getElementById('ttsPitch');
+    const ttsFormat = document.getElementById('ttsFormat');
+    const ttsSampleRate = document.getElementById('ttsSampleRate');
+    const ttsBitrate = document.getElementById('ttsBitrate');
+    const ttsChannel = document.getElementById('ttsChannel');
+    const refreshVoicesBtn = document.getElementById('refreshVoicesBtn');
+    const ttsGenerateBtn = document.getElementById('ttsGenerateBtn');
+    const ttsDownloadBtn = document.getElementById('ttsDownloadBtn');
+    const ttsAudioPlayer = document.getElementById('ttsAudioPlayer');
+    const audioPlayBtn = document.getElementById('audioPlayBtn');
+    const playIcon = document.getElementById('playIcon');
+    const pauseIcon = document.getElementById('pauseIcon');
+    const audioDuration = document.getElementById('audioDuration');
+    const audioCurrentTime = document.getElementById('audioCurrentTime');
+    const audioProgressContainer = document.getElementById('audioProgressContainer');
+    const audioProgressFill = document.getElementById('audioProgressFill');
+    const imagePrompt = document.getElementById('imagePrompt');
+    const imageSize = document.getElementById('imageSize');
+    const imageCount = document.getElementById('imageCount');
+    const imageResponseFormat = document.getElementById('imageResponseFormat');
+    const imageSeed = document.getElementById('imageSeed');
+    const imagePromptOptimizer = document.getElementById('imagePromptOptimizer');
+    const imageWatermark = document.getElementById('imageWatermark');
+    const imageGenerateBtn = document.getElementById('imageGenerateBtn');
+    const generatedImage = document.getElementById('generatedImage');
+    const imagePreview = document.getElementById('imagePreview');
+    const imagePlaceholder = document.getElementById('imagePlaceholder');
+    const imageActionsBottom = document.getElementById('imageActionsBottom');
+    const imageDownloadBtn = document.getElementById('imageDownloadBtn');
+    const imageNewBtn = document.getElementById('imageNewBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const toastContainer = document.getElementById('toastContainer');
+
+    // Theme Management
+    const themeBtn = document.getElementById('themeBtn');
+    const themeDropdown = document.getElementById('themeDropdown');
+    const themeOptions = document.querySelectorAll('.theme-option');
+
+    function setTheme(theme) {
+      if (theme === 'system') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', theme);
+      }
+      localStorage.setItem('theme', theme);
+      updateThemeIcons(theme);
+      themeOptions.forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.theme === theme);
+      });
+    }
+
+    function updateThemeIcons(theme) {
+      const lightIcon = themeBtn.querySelector('.theme-icon-light');
+      const darkIcon = themeBtn.querySelector('.theme-icon-dark');
+      if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        lightIcon.style.display = 'none';
+        darkIcon.style.display = 'block';
+      } else {
+        lightIcon.style.display = 'block';
+        darkIcon.style.display = 'none';
+      }
+    }
+
+    themeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      themeDropdown.classList.toggle('show');
+    });
+
+    themeOptions.forEach(opt => {
+      opt.addEventListener('click', () => {
+        setTheme(opt.dataset.theme);
+        themeDropdown.classList.remove('show');
+      });
+    });
+
+    document.addEventListener('click', () => {
+      themeDropdown.classList.remove('show');
+    });
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    setTheme(savedTheme);
+
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (localStorage.getItem('theme') === 'system') {
+        setTheme('system');
+      }
+    });
+
+    // Initialize
+    if (sk) {
+      skInput.value = sk;
+      checkConnection();
+      checkSKStatus();
+    }
+
+    // Render chat history from localStorage
+    function renderChatHistory() {
+      if (chatMessages.querySelector('.message-placeholder')) {
+        chatMessages.innerHTML = '';
+      }
+      chatHistory.forEach(msg => {
+        const msgEl = document.createElement('div');
+        msgEl.className = `message ${msg.role}`;
+        if (msg.role === 'assistant') {
+          msgEl.innerHTML = marked.parse(msg.content);
+        } else {
+          msgEl.textContent = msg.content;
+        }
+        chatMessages.appendChild(msgEl);
+      });
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    if (chatHistory.length > 0) {
+      renderChatHistory();
+    }
+
+    // Clear chat history
+    function clearChatHistory() {
+      chatHistory = [];
+      saveChatHistory();
+      chatMessages.innerHTML = '<div class="message-placeholder">输入消息开始对话，AI 将在这里回复</div>';
+    }
+
+    // Connection status
+    function updateConnectionStatus(connected, message) {
+      statusDot.className = 'status-dot' + (connected ? ' connected' : ' error');
+      statusText.textContent = message;
+    }
+
+    async function checkConnection() {
+      if (!sk) {
+        updateConnectionStatus(false, '未连接到代理服务器');
+        return;
+      }
+      try {
+        const response = await fetch(`${PROXY_URL}/?check=1`, {
+          method: 'HEAD',
+          headers: sk ? { 'x-sk': sk } : {}
+        });
+        if (response.ok) {
+          updateConnectionStatus(true, '代理已连接');
+          loadVoices();
+        } else {
+          updateConnectionStatus(false, '连接失败');
+        }
+      } catch (e) {
+        updateConnectionStatus(false, '代理未启动');
+      }
+    }
+
+    async function loadVoices() {
+      try {
+        const targetUrl = `${API_BASE_URL}/v1/get_voice`;
+        let response;
+
+        if (useProxy) {
+          response = await fetch(PROXY_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-target-url': targetUrl,
+              'x-sk': sk
+            },
+            body: JSON.stringify({ voice_type: 'all' })
+          });
+        } else {
+          response = await fetch(targetUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${sk}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ voice_type: 'all' })
+          });
+        }
+
+        if (!response.ok) throw new Error('获取音色列表失败');
+
+        const data = await response.json();
+        renderVoiceList(data);
+      } catch (e) {
+        console.error('Load voices error:', e);
+      }
+    }
+
+    function getVoiceIcon(voiceId) {
+      const id = voiceId.toLowerCase();
+      if (id.includes('male') || id.includes('man') || id.includes('boy') || id.includes('executive') || id.includes('narrator') || id.includes(' announcer')) {
+        return '🎙️';
+      }
+      if (id.includes('female') || id.includes('woman') || id.includes('girl') || id.includes('lady') || id.includes('anchor') || id.includes('teacher')) {
+        return '🎤';
+      }
+      if (id.includes('japanese') || id.includes('_jp')) {
+        return '🗾';
+      }
+      if (id.includes('korean') || id.includes('_kr')) {
+        return '🇰🇷';
+      }
+      if (id.includes('english') || id.includes('_en')) {
+        return '🇬🇧';
+      }
+      if (id.includes('chinese') || id.includes('mandarin') || id.includes('cantonese') || id.includes('_cn')) {
+        return '🇨🇳';
+      }
+      if (id.includes('santa') || id.includes('claus')) {
+        return '🎅';
+      }
+      if (id.includes('robot')) {
+        return '🤖';
+      }
+      if (id.includes('cartoon') || id.includes('pig')) {
+        return '🐷';
+      }
+      return '🔊';
+    }
+
+    function getVoiceLang(voiceId) {
+      const id = voiceId.toLowerCase();
+      if (id.includes('chinese') || id.includes('mandarin') || id.includes('cantonese')) return '中文';
+      if (id.includes('japanese')) return '日文';
+      if (id.includes('korean')) return '韩文';
+      if (id.includes('english')) return '英文';
+      if (id.includes('spanish')) return '西班牙文';
+      if (id.includes('french')) return '法文';
+      if (id.includes('portuguese')) return '葡萄牙文';
+      if (id.includes('german')) return '德文';
+      if (id.includes('russian')) return '俄文';
+      if (id.includes('italian')) return '意大利文';
+      if (id.includes('indonesian')) return '印尼文';
+      if (id.includes('thai')) return '泰文';
+      if (id.includes('vietnamese')) return '越文';
+      if (id.includes('hindi')) return '印地文';
+      if (id.includes('arabic')) return '阿拉伯文';
+      return '其他';
+    }
+
+    function renderVoiceList(data) {
+      const systemVoices = data.system_voice || [];
+      const cloningVoices = data.voice_cloning || [];
+      const generationVoices = data.voice_generation || [];
+
+      const voiceList = document.getElementById('voiceList');
+      voiceList.innerHTML = '';
+
+      // Also update hidden select
+      ttsVoice.innerHTML = '';
+
+      let selectedVoiceId = null;
+
+      if (systemVoices.length > 0) {
+        systemVoices.forEach((v, index) => {
+          const card = document.createElement('div');
+          card.className = 'voice-card' + (index === 0 ? ' selected' : '');
+          card.innerHTML = `
+            <span class="voice-icon">${getVoiceIcon(v.voice_id)}</span>
+            <span class="voice-name" title="${v.voice_name || v.voice_id}">${v.voice_name || v.voice_id}</span>
+          `;
+          card.dataset.voiceId = v.voice_id;
+          card.addEventListener('click', () => selectVoiceCard(card, v.voice_id));
+          voiceList.appendChild(card);
+
+          const option = document.createElement('option');
+          option.value = v.voice_id;
+          option.textContent = v.voice_name || v.voice_id;
+          ttsVoice.appendChild(option);
+
+          if (index === 0) selectedVoiceId = v.voice_id;
+        });
+      }
+
+      if (cloningVoices.length > 0) {
+        cloningVoices.forEach(v => {
+          const card = document.createElement('div');
+          card.className = 'voice-card';
+          card.innerHTML = `
+            <span class="voice-icon">🎤</span>
+            <span class="voice-name" title="${v.voice_id}">${v.voice_id.substring(0, 12)}...</span>
+          `;
+          card.dataset.voiceId = v.voice_id;
+          card.addEventListener('click', () => selectVoiceCard(card, v.voice_id));
+          voiceList.appendChild(card);
+
+          const option = document.createElement('option');
+          option.value = v.voice_id;
+          option.textContent = v.voice_id;
+          ttsVoice.appendChild(option);
+        });
+      }
+
+      if (generationVoices.length > 0) {
+        generationVoices.forEach(v => {
+          const card = document.createElement('div');
+          card.className = 'voice-card';
+          card.innerHTML = `
+            <span class="voice-icon">✨</span>
+            <span class="voice-name" title="${v.voice_id}">${v.voice_id.substring(0, 12)}...</span>
+          `;
+          card.dataset.voiceId = v.voice_id;
+          card.addEventListener('click', () => selectVoiceCard(card, v.voice_id));
+          voiceList.appendChild(card);
+
+          const option = document.createElement('option');
+          option.value = v.voice_id;
+          option.textContent = v.voice_id;
+          ttsVoice.appendChild(option);
+        });
+      }
+
+      if (voiceList.children.length === 0) {
+        voiceList.innerHTML = '<div class="voice-loading">暂无可用音色</div>';
+        // Add default voice
+        const option = document.createElement('option');
+        option.value = 'male-qn-qingse';
+        option.textContent = 'male-qn-qingse';
+        ttsVoice.appendChild(option);
+      }
+    }
+
+    function selectVoiceCard(card, voiceId) {
+      document.querySelectorAll('.voice-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      ttsVoice.value = voiceId;
+    }
+
+    // Toast function
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      toastContainer.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Loading state
+    function setLoading(loading) {
+      loadingOverlay.classList.toggle('visible', loading);
+    }
+
+    // SK management
+    saveApiKeyBtn.addEventListener('click', async () => {
+      const skVal = skInput.value.trim();
+
+      if (skVal) {
+        sk = skVal;
+        localStorage.setItem('minimax_sk', skVal);
+        const result = await checkSKStatus();
+        if (result.valid) {
+          showToast('SK 已保存', 'success');
+          checkConnection();
+        }
+        // If invalid, checkSKStatus already shows toast
+      } else {
+        showToast('请输入有效的 SK', 'error');
+      }
+    });
+
+    skInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') saveApiKeyBtn.click();
+    });
+
+    refreshVoicesBtn.addEventListener('click', () => {
+      if (sk) {
+        loadVoices();
+        showToast('正在刷新音色列表', 'success');
+      }
+    });
+
+    // Tab navigation
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabId = tab.dataset.tab;
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        panels.forEach(p => p.classList.remove('active'));
+        document.getElementById(`${tabId}Panel`).classList.add('active');
+      });
+    });
+
+    // Auto-resize textarea
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    }
+
+    // Chat functionality
+    chatInput.addEventListener('input', () => autoResize(chatInput));
+
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendChat();
+      }
+    });
+
+    chatSendBtn.addEventListener('click', sendChat);
+
+    document.getElementById('clearChatBtn').addEventListener('click', () => {
+      if (chatHistory.length === 0) return;
+      if (confirm('确定要清空对话记录吗？')) {
+        clearChatHistory();
+      }
+    });
+
+    function addMessage(content, role) {
+      if (chatMessages.querySelector('.message-placeholder')) {
+        chatMessages.innerHTML = '';
+      }
+      const msg = document.createElement('div');
+      msg.className = `message ${role}`;
+      if (role === 'assistant') {
+        msg.innerHTML = marked.parse(content);
+      } else {
+        msg.textContent = content;
+      }
+      chatMessages.appendChild(msg);
+      // Auto scroll to bottom
+      requestAnimationFrame(() => {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      });
+    }
+
+    async function sendChat() {
+      if (!sk) {
+        showToast('请先完成 SK 认证', 'error');
+        return;
+      }
+
+      const text = chatInput.value.trim();
+      if (!text) return;
+
+      addMessage(text, 'user');
+      chatHistory.push({ role: 'user', content: text });
+      saveChatHistory();
+      chatInput.value = '';
+      chatInput.style.height = 'auto';
+
+      // Create assistant message placeholder for streaming
+      if (chatMessages.querySelector('.message-placeholder')) {
+        chatMessages.innerHTML = '';
+      }
+      const assistantMsg = document.createElement('div');
+      assistantMsg.className = 'message assistant typing';
+      assistantMsg.textContent = '';
+      chatMessages.appendChild(assistantMsg);
+
+      try {
+        const baseUrl = API_BASE_URL;
+        const targetUrl = `${baseUrl}/v1/text/chatcompletion_v2`;
+
+        let fetchUrl, fetchOptions;
+        if (useProxy) {
+          fetchUrl = PROXY_URL;
+          fetchOptions = {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'text/event-stream',
+              'x-target-url': targetUrl,
+              'x-sk': sk
+            },
+            body: JSON.stringify({
+              model: 'MiniMax-M2.7',
+              messages: chatHistory.map(m => ({
+                role: m.role,
+                content: m.content
+              })),
+              temperature: 1.0,
+              top_p: 0.95,
+              max_completion_tokens: 2048,
+              stream: true
+            })
+          };
+        } else {
+          fetchUrl = targetUrl;
+          fetchOptions = {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${sk}`,
+              'Content-Type': 'application/json',
+              'Accept': 'text/event-stream'
+            },
+            body: JSON.stringify({
+              model: 'MiniMax-M2.7',
+              messages: chatHistory.map(m => ({
+                role: m.role,
+                content: m.content
+              })),
+              temperature: 1.0,
+              top_p: 0.95,
+              max_completion_tokens: 2048,
+              stream: true
+            })
+          };
+        }
+
+        const response = await fetch(fetchUrl, fetchOptions);
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error?.message || '请求失败');
+        }
+
+        // Handle streaming response - SSE format with "data: " prefix
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullContent = '';
+        let reasoningContent = '';
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          // Split by newlines
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (!trimmedLine) continue;
+
+            // Remove "data: " prefix
+            let dataStr = trimmedLine;
+            if (trimmedLine.startsWith('data: ')) {
+              dataStr = trimmedLine.slice(6);
+            }
+
+            if (dataStr === '[DONE]') continue;
+
+            try {
+              const parsed = JSON.parse(dataStr);
+
+              // Get content from delta (streaming) or message (final)
+              const content = parsed.choices?.[0]?.delta?.content ||
+                              parsed.choices?.[0]?.message?.content || '';
+
+              // Get reasoning content if present
+              const reasoning = parsed.choices?.[0]?.delta?.reasoning_content ||
+                                parsed.choices?.[0]?.message?.reasoning_content || '';
+
+              if (content) {
+                fullContent += content;
+                assistantMsg.innerHTML = marked.parse(fullContent);
+                assistantMsg.classList.remove('typing');
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+              }
+
+              if (reasoning) {
+                reasoningContent = reasoning;
+              }
+
+              // Check for completion
+              if (parsed.choices?.[0]?.finish_reason === 'stop') {
+                break;
+              }
+            } catch (e) {
+              // Skip invalid JSON lines
+            }
+          }
+        }
+
+        if (fullContent) {
+          chatHistory.push({ role: 'assistant', content: fullContent });
+          saveChatHistory();
+        } else {
+          assistantMsg.textContent = '无回复';
+        }
+      } catch (err) {
+        let errorMsg = err.message;
+        if (err.name === 'TypeError' && err.message.includes('fetch')) {
+          errorMsg = `网络错误：请检查代理是否启动`;
+        }
+        showToast(errorMsg, 'error');
+        assistantMsg.textContent = `错误: ${errorMsg}`;
+        assistantMsg.classList.add('error');
+      }
+    }
+
+    // TTS functionality
+    async function generateTTS(text) {
+      setLoading(true);
+
+      try {
+        const targetUrl = `${API_BASE_URL}/v1/t2a_v2`;
+
+        const voiceSetting = {
+          voice_id: ttsVoice.value,
+          speed: parseFloat(ttsSpeed.value),
+          vol: parseFloat(ttsVol.value),
+          pitch: parseInt(ttsPitch.value)
+        };
+
+        // Only add emotion if it's not empty
+        if (ttsEmotion.value) {
+          voiceSetting.emotion = ttsEmotion.value;
+        }
+
+        const requestBody = {
+          model: ttsModel.value,
+          text: text,
+          stream: false,
+          output_format: 'hex',
+          voice_setting: voiceSetting,
+          audio_setting: {
+            sample_rate: parseInt(ttsSampleRate.value),
+            bitrate: parseInt(ttsBitrate.value),
+            format: ttsFormat.value,
+            channel: parseInt(ttsChannel.value)
+          }
+        };
+
+        let fetchUrl, fetchOptions;
+        if (useProxy) {
+          fetchUrl = PROXY_URL;
+          fetchOptions = {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'x-target-url': targetUrl,
+              'x-sk': sk
+            },
+            body: JSON.stringify(requestBody)
+          };
+        } else {
+          fetchUrl = targetUrl;
+          fetchOptions = {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${sk}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+          };
+        }
+
+        const response = await fetch(fetchUrl, fetchOptions);
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.base_resp?.status_msg || '请求失败');
+        }
+
+        const data = await response.json();
+
+        if (!data.data?.audio) {
+          throw new Error('未获取到音频数据');
+        }
+
+        // Convert hex to binary
+        const hex = data.data.audio;
+        const binary = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < binary.length; i++) {
+          binary[i] = parseInt(hex.substr(i * 2, 2), 16);
+        }
+
+        const blob = new Blob([binary], { type: `audio/${ttsFormat.value}` });
+        currentAudioUrl = URL.createObjectURL(blob);
+
+        // Create new Audio object
+        currentAudio = new Audio();
+        currentAudio.src = currentAudioUrl;
+
+        currentAudio.addEventListener('loadedmetadata', () => {
+          const duration = currentAudio.duration;
+          const minutes = Math.floor(duration / 60);
+          const seconds = Math.floor(duration % 60);
+          audioDuration.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        });
+
+        currentAudio.addEventListener('timeupdate', () => {
+          const current = currentAudio.currentTime;
+          const duration = currentAudio.duration || 1;
+          const progress = (current / duration) * 100;
+          audioProgressFill.style.width = progress + '%';
+
+          const currentMin = Math.floor(current / 60);
+          const currentSec = Math.floor(current % 60);
+          audioCurrentTime.textContent = `${currentMin}:${currentSec.toString().padStart(2, '0')}`;
+        });
+
+        currentAudio.addEventListener('ended', () => {
+          isPlaying = false;
+          playIcon.style.display = 'block';
+          pauseIcon.style.display = 'none';
+          audioProgressFill.style.width = '100%';
+        });
+
+        currentAudio.addEventListener('error', (e) => {
+          console.error('Audio error:', e);
+        });
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    ttsGenerateBtn.addEventListener('click', async () => {
+      if (!sk) {
+        showToast('请先完成 SK 认证', 'error');
+        return;
+      }
+
+      const text = ttsText.value.trim();
+      if (!text) {
+        showToast('请输入要转换的文本', 'error');
+        return;
+      }
+
+      // Reset audio state
+      isPlaying = false;
+      playIcon.style.display = 'block';
+      pauseIcon.style.display = 'none';
+      audioCurrentTime.textContent = '0:00';
+      audioDuration.textContent = '0:00';
+      audioProgressFill.style.width = '0%';
+
+      try {
+        await generateTTS(text);
+
+        ttsAudioPlayer.style.display = 'block';
+
+        showToast('语音生成成功', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    });
+
+    function playAudio() {
+      if (!currentAudio || !currentAudioUrl) {
+        showToast('请先生成语音', 'error');
+        return;
+      }
+
+      if (isPlaying) {
+        currentAudio.pause();
+        isPlaying = false;
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+      } else {
+        currentAudio.play().then(() => {
+          isPlaying = true;
+          playIcon.style.display = 'none';
+          pauseIcon.style.display = 'block';
+        }).catch(err => {
+          console.error('Play error:', err);
+          showToast('播放失败', 'error');
+        });
+      }
+    }
+
+    audioPlayBtn.addEventListener('click', playAudio);
+
+    // Progress bar click to seek
+    audioProgressContainer.addEventListener('click', (e) => {
+      if (!currentAudio || !currentAudioUrl) return;
+      const rect = audioProgressContainer.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const percentage = clickX / rect.width;
+      currentAudio.currentTime = percentage * currentAudio.duration;
+    });
+
+    ttsDownloadBtn.addEventListener('click', () => {
+      if (!currentAudioUrl) return;
+      const a = document.createElement('a');
+      a.href = currentAudioUrl;
+      a.download = `minimax-tts-${Date.now()}.mp3`;
+      a.click();
+    });
+
+    // Image generation
+    imageGenerateBtn.addEventListener('click', async () => {
+      if (!sk) {
+        showToast('请先完成 SK 认证', 'error');
+        return;
+      }
+
+      const prompt = imagePrompt.value.trim();
+      if (!prompt) {
+        showToast('请输入图片描述', 'error');
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const baseUrl = API_BASE_URL;
+        const targetUrl = `${baseUrl}/v1/image_generation`;
+
+        const requestBody = {
+          model: 'image-01',
+          prompt: prompt,
+          aspect_ratio: imageSize.value,
+          response_format: 'base64',
+          n: parseInt(imageCount.value),
+          prompt_optimizer: imagePromptOptimizer.checked,
+          aigc_watermark: imageWatermark.checked
+        };
+
+        // Add seed if provided
+        const seedValue = imageSeed.value.trim();
+        if (seedValue) {
+          requestBody.seed = parseInt(seedValue);
+        }
+
+        let fetchUrl, fetchOptions;
+        if (useProxy) {
+          fetchUrl = PROXY_URL;
+          fetchOptions = {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'x-target-url': targetUrl,
+              'x-sk': sk
+            },
+            body: JSON.stringify(requestBody)
+          };
+        } else {
+          fetchUrl = targetUrl;
+          fetchOptions = {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${sk}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+          };
+        }
+
+        const response = await fetch(fetchUrl, fetchOptions);
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.base_resp?.status_msg || error.error?.message || '请求失败');
+        }
+
+        const data = await response.json();
+
+        // Clear previous images
+        imagePreview.innerHTML = '';
+
+        const imageData = data.data;
+        if (!imageData) {
+          throw new Error('未获取到图片数据');
+        }
+
+        // Always use base64 for display to avoid CORS issues
+        let imageBase64s = imageData.image_base64 || [];
+
+        // If only URLs returned, use them for download but show error for display
+        if (imageBase64s.length === 0 && imageData.image_urls && imageData.image_urls.length > 0) {
+          window.currentGeneratedImages = imageData.image_urls.map((url, index) => ({ url, index }));
+          imageBase64s = [];
+        }
+
+        if (imageBase64s.length === 0) {
+          throw new Error('未获取到图片数据，请尝试切换到Base64格式');
+        }
+
+        // Store images for display
+        window.currentGeneratedImages = imageBase64s.map((b64, index) => ({
+          url: `data:image/png;base64,${b64}`,
+          index
+        }));
+
+        // Display images
+        const imgGrid = document.createElement('div');
+        imgGrid.className = 'image-grid';
+
+        imageBase64s.forEach((b64, index) => {
+          const imgEl = document.createElement('img');
+          imgEl.referrerPolicy = 'no-referrer';
+          imgEl.src = `data:image/png;base64,${b64}`;
+          imgEl.alt = `生成的图片 ${index + 1}`;
+          imgEl.onclick = () => {
+            window.selectedImageIndex = index;
+          };
+          imgGrid.appendChild(imgEl);
+        });
+
+        imagePreview.appendChild(imgGrid);
+        imagePlaceholder.style.display = 'none';
+        imageActionsBottom.style.display = 'flex';
+
+        const successCount = data.metadata?.success_count || imageBase64s.length;
+        showToast(`图片生成成功 (${successCount}/${imageBase64s.length})`, 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    imageDownloadBtn.addEventListener('click', async () => {
+      if (window.currentGeneratedImages && window.currentGeneratedImages.length > 0) {
+        const images = window.currentGeneratedImages;
+        const timestamp = Date.now();
+
+        if (images.length === 1) {
+          // Single image download
+          const a = document.createElement('a');
+          a.href = images[0].url;
+          a.download = `minimax-image-${timestamp}.png`;
+          a.click();
+        } else {
+          // Multiple images - download as zip
+          setLoading(true);
+          try {
+            const zip = new JSZip();
+            const imgFolder = zip.folder('images');
+
+            for (let i = 0; i < images.length; i++) {
+              const img = images[i];
+              const base64Data = img.url.split(',')[1];
+              imgFolder.file(`image-${i + 1}.png`, base64Data, { base64: true });
+            }
+
+            const content = await zip.generateAsync({ type: 'blob' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(content);
+            a.download = `minimax-images-${timestamp}.zip`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+          } catch (err) {
+            showToast('下载失败: ' + err.message, 'error');
+          } finally {
+            setLoading(false);
+          }
+        }
+      }
+    });
+
+    imageNewBtn.addEventListener('click', () => {
+      imagePreview.innerHTML = '';
+      imagePreview.appendChild(imagePlaceholder);
+      imagePlaceholder.style.display = 'flex';
+      imageActionsBottom.style.display = 'none';
+      imagePrompt.value = '';
+      window.currentGeneratedImages = null;
+      window.selectedImageIndex = null;
+    });
+  </script>
+</body>
+</html>
